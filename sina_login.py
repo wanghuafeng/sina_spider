@@ -87,5 +87,5 @@ def gen_htmls():
 
 if __name__ == '__main__':
     # url_list = [u'http://hot.weibo.com/?v=9999&page=1']
-    # login_weibo('gsmice@sina.cn', '997568', url_list)
+    # login_weibo('username', 'password', url_list)
     gen_htmls()
