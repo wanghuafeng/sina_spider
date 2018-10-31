@@ -85,6 +85,54 @@ def gen_htmls():
             else:
                 continue
 
+
+def login_v2(nick , pwd) :
+    """最新新版登陆接口，需做两次跳转; 2018-10-31"""
+    import requests
+    session = requests.session()
+    prelogin_url = 'https://login.sina.com.cn/sso/prelogin.php?entry=weibo&callback=sinaSSOController.preloginCallBack&su=%s&rsakt=mod&checkpin=1&client=ssologin.js(v1.4.15)&_=1400822309846' % nick
+    content = session.get(prelogin_url).content
+    servertime = re.findall('"servertime":(.*?),' , content)[0]
+    pubkey = re.findall('"pubkey":"(.*?)",' , content)[0]
+    rsakv = re.findall('"rsakv":"(.*?)",' , content)[0]
+    nonce = re.findall('"nonce":"(.*?)",' , content)[0]
+    su = base64.b64encode(nick)
+    rsaPublickey = int(pubkey , 16)
+    key = rsa.PublicKey(rsaPublickey , 65537)
+    message = bytes(str(servertime) + '\t' + str(nonce) + '\n' + str(pwd))
+    sp = binascii.b2a_hex(rsa.encrypt(message , key))
+    param = {
+        'entry': 'weibo',
+        'gateway': 1 ,
+        'from': '' ,
+        'savestate': 7 ,
+        'useticket': 1 ,
+        'pagerefer': 'http://login.sina.com.cn/sso/logout.php?entry=miniblog&r=http%3A%2F%2Fweibo.com%2Flogout.php%3Fbackurl%3D',
+        'vsnf': 1,
+        'su': su,
+        'service': 'miniblog',
+        'servertime': servertime,
+        'nonce' :nonce,
+        'pwencode': 'rsa2',
+        'rsakv': rsakv,
+        'sp' :sp ,
+        'sr': '1680*1050',
+        'encoding': 'UTF-8',
+        'prelt': 961 ,
+        'url': 'http://weibo.com/ajaxlogin.php?framelogin=1&callback=parent.sinaSSOController.feedBackUrlCallBack'
+    }
+    url = 'https://login.sina.com.cn/sso/login.php?client=ssologin.js(v1.4.15)'
+    resp = session.post(url , param)
+    print resp.content
+    urll =  re.search("""location.replace\((?:"|')(.*?)(?:"|')\)""", resp.content).group(1)
+    resp = session.get(urll)
+    urll =  re.search("""location.replace\((?:"|')(.*?)(?:"|')\)""", resp.content).group(1)
+    print urll
+    resp = session.get(urll)
+    print resp.content.decode('gbk')
+    # url = 'https://weibo.com/u/1723864622/home?wvr=5'
+    # print session.get(url).content
+    
 if __name__ == '__main__':
     # url_list = [u'http://hot.weibo.com/?v=9999&page=1']
     # login_weibo('username', 'password', url_list)
